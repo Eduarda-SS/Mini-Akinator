@@ -1,0 +1,1 @@
+# akinator_animal package
