@@ -337,14 +337,19 @@ export default function AdminPerguntas() {
             <h1 id="perguntas-titulo">Perguntas</h1>
             <p className="perguntas-intro">Cadastre, edite e remova as perguntas que o Akinator Animal faz.</p>
           </div>
-          <button
-            className="perguntas-btn primario"
-            type="button"
-            onClick={() => setFormulario({ pergunta: null })}
-            disabled={carregando && perguntas.length === 0}
-          >
-            <Plus size={18} /> Nova pergunta
-          </button>
+          <div className="perguntas-header-actions">
+            <a className="perguntas-btn secundario voltar-admin" href="/?page=admin">
+              ← Voltar ao painel
+            </a>
+            <button
+              className="perguntas-btn primario"
+              type="button"
+              onClick={() => setFormulario({ pergunta: null })}
+              disabled={carregando && perguntas.length === 0}
+            >
+              <Plus size={18} /> Nova pergunta
+            </button>
+          </div>
         </header>
 
         {aviso && (

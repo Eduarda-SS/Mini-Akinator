@@ -1,5 +1,12 @@
 # Tela de login do admin
 
+Em `npm run dev`, a tela aceita uma conta de demonstração local:
+
+- E-mail: `admin@akinator.com`
+- Senha: `Admin123!`
+
+Após entrar, o painel oferece links para as páginas de animais e perguntas. Essa conta serve apenas para demonstração no servidor local de desenvolvimento; a autenticação de produção continua dependendo da API.
+
 ## Ver a tela no navegador
 
 1. Instale Node.js (versão LTS).

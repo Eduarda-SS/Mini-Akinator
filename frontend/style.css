@@ -77,6 +77,8 @@ h1 {
   font: 800 32px/1.2 "Manrope", sans-serif;
   letter-spacing: -.04em;
 }
+#login-title,
+#admin-title { color: #c5e69f !important; }
 .intro { margin: 0 0 29px; color: #aab5ac; font-size: 14px; }
 form { display: grid; gap: 10px; }
 label { margin-top: 4px; color: #e1e7e1; font-size: 13px; font-weight: 600; }
@@ -126,6 +128,32 @@ input:focus { border-color: #a9d17f; box-shadow: 0 0 0 3px rgba(169, 209, 127, .
 .error { color: #ffaaa1; }
 .success { color: #b5da8b; }
 .security-note { margin: 24px 0 0; color: #78847b; text-align: center; font-size: 11px; }
+.demo-credentials { line-height: 1.8; }
+.demo-credentials strong { color: #c5e69f; font-weight: 600; }
+.admin-hub { display: grid; gap: 8px; }
+.admin-hub .intro { margin-bottom: 12px; }
+.admin-links { display: grid; gap: 12px; margin: 12px 0; }
+.admin-links a {
+  display: block;
+  padding: 14px 16px;
+  border: 1px solid #39473d;
+  border-radius: 9px;
+  color: #f3f5f2;
+  background: #141c17;
+  text-decoration: none;
+  font-weight: 600;
+  transition: border-color .2s, background .2s;
+}
+.admin-links a:hover { border-color: #a9d17f; background: #1c2920; }
+.back-button {
+  justify-self: start;
+  padding: 8px 0;
+  border: 0;
+  color: #aab5ac;
+  background: transparent;
+  cursor: pointer;
+}
+.back-button:hover { color: #fff; }
 footer {
   position: absolute;
   bottom: 27px;

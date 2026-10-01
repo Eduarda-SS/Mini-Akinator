@@ -2,19 +2,34 @@ import { useState } from "react";
 import { Eye, EyeOff, PawPrint, ShieldCheck } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+const DEMO_EMAIL = "admin@akinator.com";
+const DEMO_PASSWORD = "Admin123!";
 
-export default function AdminLogin({ onBack }) {
+export default function AdminLogin({ onBack, onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
-    setSuccess("");
+
+    // Conta fixa apenas para testar o front localmente. Em produção, a
+    // autenticação sempre passa pela API e nunca aceita essas credenciais.
+    if (import.meta.env.DEV) {
+      if (
+        email.trim().toLowerCase() === DEMO_EMAIL &&
+        password === DEMO_PASSWORD
+      ) {
+        onLogin?.();
+      } else {
+        setError("E-mail ou senha de demonstração incorretos.");
+      }
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -31,7 +46,7 @@ export default function AdminLogin({ onBack }) {
         return;
       }
 
-      setSuccess("Login realizado. A API já autenticou este administrador.");
+      onLogin?.();
     } catch {
       setError("Não foi possível conectar à API. Confira se o servidor está ligado.");
     } finally {
@@ -91,14 +106,20 @@ export default function AdminLogin({ onBack }) {
           </div>
 
           {error && <p className="message error" role="alert">{error}</p>}
-          {success && <p className="message success" role="status">{success}</p>}
-
           <button className="submit-button" type="submit" disabled={loading}>
             {loading ? "Entrando…" : "Entrar"}
           </button>
         </form>
 
-        <p className="security-note">Acesso exclusivo para administradores autorizados.</p>
+        {import.meta.env.DEV ? (
+          <p className="security-note demo-credentials">
+            Conta de teste local<br />
+            E-mail: <strong>{DEMO_EMAIL}</strong><br />
+            Senha: <strong>{DEMO_PASSWORD}</strong>
+          </p>
+        ) : (
+          <p className="security-note">Acesso exclusivo para administradores autorizados.</p>
+        )}
       </section>
       <footer>AKINATOR ANIMAL <span>·</span> PAINEL ADMINISTRATIVO</footer>
     </main>

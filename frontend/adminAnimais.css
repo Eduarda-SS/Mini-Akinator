@@ -24,6 +24,8 @@
   justify-content: space-between;
   margin-bottom: 26px;
 }
+.animais-header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.animais-btn.voltar-admin { text-decoration: none; }
 .animais-eyebrow {
   display: flex;
   gap: 7px;
@@ -265,6 +267,7 @@
 @media (max-width: 640px) {
   .animais-page { padding: 32px 16px 28px; }
   .animais-header { flex-direction: column; align-items: stretch; }
+  .animais-header-actions { justify-content: flex-start; }
   .animais-page h1 { font-size: 28px; }
   .animais-toolbar { padding: 14px 16px; }
   .animais-linha.cabecalho { display: none; }

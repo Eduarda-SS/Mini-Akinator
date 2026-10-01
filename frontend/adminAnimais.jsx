@@ -443,14 +443,19 @@ export default function AdminAnimais() {
             <h1 id="animais-titulo">Animais</h1>
             <p className="animais-intro">Cadastre, edite e remova os animais que o Akinator conhece.</p>
           </div>
-          <button
-            className="animais-btn primario"
-            type="button"
-            onClick={() => setFormulario({ animal: null })}
-            disabled={carregando && animais.length === 0}
-          >
-            <Plus size={18} /> Novo animal
-          </button>
+          <div className="animais-header-actions">
+            <a className="animais-btn secundario voltar-admin" href="/?page=admin">
+              ← Voltar ao painel
+            </a>
+            <button
+              className="animais-btn primario"
+              type="button"
+              onClick={() => setFormulario({ animal: null })}
+              disabled={carregando && animais.length === 0}
+            >
+              <Plus size={18} /> Novo animal
+            </button>
+          </div>
         </header>
 
         {aviso && (
