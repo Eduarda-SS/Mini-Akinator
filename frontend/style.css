@@ -143,30 +143,3 @@ footer span { padding: 0 5px; color: #a9d17f; }
   h1 { font-size: 28px; }
 }
 
-.back-button {
-display: inline-flex;
-align-items: center;
-gap: 7px;
-margin-bottom: 28px;
-padding: 0;
-border: 0;
-color: #8f9b91;
-background: transparent;
-font-size: 13px;
-font-weight: 600;
-cursor: pointer;
-transition:
-color .2s ease,
-transform .2s ease;
-}
-
-.back-button:hover {
-color: #b5da8b;
-transform: translateX(-2px);
-}
-
-.back-button:focus-visible {
-outline: 2px solid rgba(181, 218, 139, .55);
-outline-offset: 4px;
-border-radius: 4px;
-}
