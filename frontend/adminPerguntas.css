@@ -1,0 +1,248 @@
+.perguntas-page {
+  min-height: 100vh;
+  position: relative;
+  padding: 56px 24px 40px;
+  color: #f3f5f2;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(45, 112, 75, .19), transparent 45%),
+    radial-gradient(circle at 15% 15%, rgba(117, 157, 92, .08) 0 1px, transparent 2px),
+    #101713;
+  background-size: auto, 28px 28px, auto;
+}
+
+.perguntas-container { width: min(100%, 920px); margin: 0 auto; }
+
+/* ─── Cabeçalho ─── */
+.perguntas-header {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.perguntas-eyebrow {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  color: #b5da8b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+.perguntas-page h1 { margin: 13px 0 7px; font: 800 32px/1.2 "Manrope", sans-serif; letter-spacing: -.04em; }
+.perguntas-page h2 { margin: 0; font: 800 20px/1.3 "Manrope", sans-serif; letter-spacing: -.02em; }
+.perguntas-intro { margin: 0; color: #aab5ac; font-size: 14px; }
+
+/* ─── Botões ─── */
+.perguntas-btn {
+  height: 44px;
+  padding: 0 18px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform .15s ease, background .2s ease, border-color .2s ease;
+}
+.perguntas-btn:disabled { opacity: .65; cursor: not-allowed; }
+.perguntas-btn.primario { color: #172019; background: #b5da8b; }
+.perguntas-btn.primario:hover:not(:disabled) { transform: translateY(-1px); background: #c5e69f; }
+.perguntas-btn.secundario { color: #e1e7e1; background: transparent; border: 1px solid #39473d; }
+.perguntas-btn.secundario:hover:not(:disabled) { border-color: #a9d17f; }
+.perguntas-btn.perigo { color: #2a0f0c; background: #ffaaa1; }
+.perguntas-btn.perigo:hover:not(:disabled) { transform: translateY(-1px); background: #ffbdb6; }
+
+.perguntas-icon-button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: #9aa69c;
+  background: transparent;
+  cursor: pointer;
+  transition: color .2s, background .2s;
+}
+.perguntas-icon-button:hover { color: #e7eee7; background: rgba(203, 220, 207, .08); }
+.perguntas-icon-button.perigo:hover { color: #ffaaa1; background: rgba(255, 170, 161, .1); }
+
+/* ─── Cartão, busca e lista ─── */
+.perguntas-card {
+  border: 1px solid rgba(203, 220, 207, .12);
+  border-radius: 20px;
+  background: rgba(24, 33, 27, .94);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .38);
+  overflow: hidden;
+}
+.perguntas-toolbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(203, 220, 207, .1);
+}
+.perguntas-busca { position: relative; flex: 1; max-width: 360px; color: #758078; }
+.perguntas-busca svg { position: absolute; top: 13px; left: 13px; pointer-events: none; }
+.perguntas-page .perguntas-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #39473d;
+  border-radius: 9px;
+  outline: none;
+  color: #f3f5f2;
+  background: #141c17;
+  transition: border-color .2s, box-shadow .2s;
+}
+.perguntas-page .perguntas-busca .perguntas-input { padding-left: 40px; }
+.perguntas-page .perguntas-input::placeholder { color: #758078; }
+.perguntas-page .perguntas-input:focus { border-color: #a9d17f; box-shadow: 0 0 0 3px rgba(169, 209, 127, .13); }
+.perguntas-contador { color: #78847b; font-size: 12px; font-weight: 600; }
+
+.perguntas-lista { margin: 0; padding: 0; list-style: none; }
+.perguntas-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) .8fr .8fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 22px;
+  border-bottom: 1px solid rgba(203, 220, 207, .07);
+  transition: background .2s;
+}
+.perguntas-linha:last-child { border-bottom: 0; }
+.perguntas-linha:not(.cabecalho):hover { background: rgba(203, 220, 207, .035); }
+.perguntas-linha.cabecalho {
+  padding-top: 11px;
+  padding-bottom: 11px;
+  color: #78847b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.perguntas-texto { font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.perguntas-meta { color: #aab5ac; font-size: 14px; }
+.perguntas-acoes { display: flex; gap: 4px; justify-content: flex-end; min-width: 76px; }
+
+.perguntas-estado {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  padding: 56px 24px;
+  color: #78847b;
+  text-align: center;
+}
+.perguntas-estado p { margin: 0; font-size: 14px; }
+
+/* ─── Mensagens ─── */
+.perguntas-mensagem { display: flex; gap: 8px; align-items: center; margin: 2px 0 0; font-size: 13px; line-height: 1.5; }
+.perguntas-mensagem.erro { color: #ffaaa1; }
+.perguntas-mensagem.sucesso {
+  margin: 0 0 16px;
+  padding: 11px 14px;
+  border: 1px solid rgba(181, 218, 139, .25);
+  border-radius: 9px;
+  color: #b5da8b;
+  background: rgba(181, 218, 139, .08);
+}
+.perguntas-nota { margin: 0; color: #aab5ac; font-size: 13px; line-height: 1.5; }
+
+.perguntas-rodape {
+  margin: 34px 0 0;
+  color: #67736a;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .15em;
+}
+.perguntas-rodape span { padding: 0 5px; color: #a9d17f; }
+
+/* ─── Modal ─── */
+.perguntas-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 12, 9, .72);
+  backdrop-filter: blur(3px);
+}
+.perguntas-modal {
+  width: min(100%, 560px);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 26px 28px 24px;
+  overflow-y: auto;
+  border: 1px solid rgba(203, 220, 207, .12);
+  border-radius: 20px;
+  background: #18211b;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .55);
+}
+.perguntas-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.perguntas-modal-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+.perguntas-form { display: grid; gap: 10px; }
+.perguntas-page .perguntas-label { margin: 4px 0 0; color: #e1e7e1; font-size: 13px; font-weight: 600; }
+.perguntas-secao { display: flex; align-items: baseline; justify-content: space-between; margin-top: 8px; }
+
+
+
+.perguntas-confirmacao { display: flex; gap: 14px; align-items: flex-start; }
+.perguntas-confirmacao p { margin: 0; color: #c4cdc5; font-size: 14px; line-height: 1.6; }
+.perguntas-confirmacao strong { color: #f3f5f2; }
+.perguntas-alerta-icone {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #ffaaa1;
+  background: rgba(255, 170, 161, .1);
+}
+
+/* ─── Animações ─── */
+@keyframes perguntas-girar { to { transform: rotate(360deg); } }
+.perguntas-page .girando { animation: perguntas-girar .9s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .perguntas-page .girando { animation-duration: 3s; }
+  .perguntas-btn, .perguntas-linha { transition: none; }
+}
+
+/* ─── Responsivo ─── */
+@media (max-width: 640px) {
+  .perguntas-page { padding: 32px 16px 28px; }
+  .perguntas-header { flex-direction: column; align-items: stretch; }
+  .perguntas-page h1 { font-size: 28px; }
+  .perguntas-toolbar { padding: 14px 16px; }
+  .perguntas-linha.cabecalho { display: none; }
+  .perguntas-linha {
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    padding: 14px 16px;
+  }
+  .perguntas-texto { grid-column: 1; }
+  .perguntas-acoes { grid-column: 2; grid-row: 1 / span 3; align-self: start; }
+  .perguntas-meta { grid-column: 1; font-size: 13px; }
+  .perguntas-meta::before { content: attr(data-rotulo) ": "; color: #78847b; }
+  .perguntas-modal { padding: 22px 18px 18px; border-radius: 16px; }
+    .perguntas-modal-acoes .perguntas-btn { flex: 1; }
+}
+/* ─── Extras desta tela ─── */
+.perguntas-form .perguntas-campo-rodape { display: flex; gap: 12px; justify-content: space-between; min-height: 18px; }
+.perguntas-page textarea.perguntas-input {
+  height: auto;
+  min-height: 96px;
+  padding: 12px 14px;
+  resize: vertical;
+  line-height: 1.5;
+}
