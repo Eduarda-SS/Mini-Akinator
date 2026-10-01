@@ -3,7 +3,7 @@ import { Eye, EyeOff, PawPrint, ShieldCheck } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
-export default function AdminLogin() {
+export default function AdminLogin({ onBack }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -42,6 +42,14 @@ export default function AdminLogin() {
   return (
     <main className="page-shell">
       <section className="login-card" aria-labelledby="login-title">
+        <button
+          type="button"
+          className="back-button"
+          onClick={onBack}
+        >
+          ← Voltar para o início
+        </button>
+        
         <div className="brand-mark" aria-hidden="true"><PawPrint size={27} /></div>
         <div className="eyebrow"><ShieldCheck size={15} /> ÁREA RESTRITA</div>
         <h1 id="login-title">Login do admin</h1>
