@@ -345,12 +345,9 @@ export default function AdminPerguntas({ onBack }) {
           <div>
             <div className="perguntas-eyebrow"><ShieldCheck size={15} /> PAINEL ADMINISTRATIVO</div>
             <h1 id="perguntas-titulo">Perguntas</h1>
-            <p className="perguntas-intro">Cadastre, edite e remova as perguntas que o Akinator faz.</p>
+            <p className="perguntas-intro">Cadastre, edite e remova as perguntas que o Akinator Animal faz.</p>
           </div>
           <div className="perguntas-header-actions">
-            <a className="perguntas-btn secundario voltar-admin" href="/?page=admin">
-              ← Voltar ao painel
-            </a>
             <button
               className="perguntas-btn primario"
               type="button"
