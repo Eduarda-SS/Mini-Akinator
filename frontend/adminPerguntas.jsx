@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   Check,
   CircleHelp,
   LoaderCircle,
@@ -278,7 +279,7 @@ function ConfirmarExclusao({ pergunta, onClose, onDeleted }) {
 
 /* ─── Tela ─────────────────────────────────────────────────────────────── */
 
-export default function AdminPerguntas() {
+export default function AdminPerguntas({ onBack }) {
   const [perguntas, setPerguntas] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
@@ -316,6 +317,11 @@ export default function AdminPerguntas() {
       .sort((a, b) => a.id - b.id);
   }, [perguntas, busca]);
 
+  function voltar() {
+    if (onBack) onBack();
+    else window.location.assign("/");
+  }
+
   function aoSalvar(mensagem) {
     setFormulario(null);
     setAviso(mensagem);
@@ -331,11 +337,15 @@ export default function AdminPerguntas() {
   return (
     <main className="perguntas-page">
       <section className="perguntas-container" aria-labelledby="perguntas-titulo">
+        <button type="button" className="perguntas-voltar" onClick={voltar}>
+          <ArrowLeft size={16} /> Voltar para o início
+        </button>
+
         <header className="perguntas-header">
           <div>
             <div className="perguntas-eyebrow"><ShieldCheck size={15} /> PAINEL ADMINISTRATIVO</div>
             <h1 id="perguntas-titulo">Perguntas</h1>
-            <p className="perguntas-intro">Cadastre, edite e remova as perguntas que o Akinator Animal faz.</p>
+            <p className="perguntas-intro">Cadastre, edite e remova as perguntas que o Akinator faz.</p>
           </div>
           <div className="perguntas-header-actions">
             <a className="perguntas-btn secundario voltar-admin" href="/?page=admin">

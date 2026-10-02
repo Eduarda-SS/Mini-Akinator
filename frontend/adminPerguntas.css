@@ -12,6 +12,23 @@
 
 .perguntas-container { width: min(100%, 920px); margin: 0 auto; }
 
+/* ─── Botão voltar ─── */
+.perguntas-voltar {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  margin: 0 0 22px;
+  padding: 6px 0;
+  border: 0;
+  color: #b6c1b8;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color .2s ease, transform .15s ease;
+}
+.perguntas-voltar:hover { color: #fff; transform: translateX(-2px); }
+.perguntas-voltar:focus-visible { outline: 2px solid #a9d17f; outline-offset: 4px; border-radius: 6px; }
+
 /* ─── Cabeçalho ─── */
 .perguntas-header {
   display: flex;
@@ -110,7 +127,7 @@
 .perguntas-lista { margin: 0; padding: 0; list-style: none; }
 .perguntas-linha {
   display: grid;
-  grid-template-columns: minmax(0, 2.4fr) .8fr .8fr auto;
+  grid-template-columns: minmax(0, 1fr) 90px 110px 76px;
   gap: 16px;
   align-items: center;
   padding: 14px 22px;
@@ -217,7 +234,7 @@
 .perguntas-page .girando { animation: perguntas-girar .9s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .perguntas-page .girando { animation-duration: 3s; }
-  .perguntas-btn, .perguntas-linha { transition: none; }
+  .perguntas-btn, .perguntas-linha, .perguntas-voltar { transition: none; }
 }
 
 /* ─── Responsivo ─── */
@@ -240,6 +257,11 @@
   .perguntas-modal { padding: 22px 18px 18px; border-radius: 16px; }
     .perguntas-modal-acoes .perguntas-btn { flex: 1; }
 }
+
+@media (min-width: 641px) {
+  .perguntas-linha > span:nth-child(2) { text-align: center; }
+}
+
 /* ─── Extras desta tela ─── */
 .perguntas-form .perguntas-campo-rodape { display: flex; gap: 12px; justify-content: space-between; min-height: 18px; }
 .perguntas-page textarea.perguntas-input {
