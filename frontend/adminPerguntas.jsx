@@ -319,7 +319,7 @@ export default function AdminPerguntas({ onBack }) {
 
   function voltar() {
     if (onBack) onBack();
-    else window.location.assign("/");
+    else window.location.assign("/?page=admin");
   }
 
   function aoSalvar(mensagem) {
@@ -338,7 +338,7 @@ export default function AdminPerguntas({ onBack }) {
     <main className="perguntas-page">
       <section className="perguntas-container" aria-labelledby="perguntas-titulo">
         <button type="button" className="perguntas-voltar" onClick={voltar}>
-          <ArrowLeft size={16} /> Voltar para o início
+          <ArrowLeft size={16} /> Voltar ao painel
         </button>
 
         <header className="perguntas-header">
