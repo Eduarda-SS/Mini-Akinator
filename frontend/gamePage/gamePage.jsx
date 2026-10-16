@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,221 +10,220 @@ import {
 } from "lucide-react";
 import "./gamePage.css";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
-const QUESTIONS_PER_ATTEMPT = 5;
-const MAX_QUESTIONS = 10;
-const UNANSWERED = "unanswered";
-const UNKNOWN = "unknown";
+const API_URL = (import.meta.env.VITE_GAME_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
-const QUESTION_BANK = [
-  "O animal é mamífero?",
-  "Ele vive na água?",
-  "Ele costuma ser um animal de estimação?",
-  "Ele voa?",
-  "Ele é selvagem?",
-  "Ele tem pele de pelo ou penas?",
-  "Ele é de grande porte?",
-  "Ele se movimenta principalmente em terra firme?",
-  "Ele é conhecido por viver em grupos ou em família?",
-  "Ele costuma ser encontrado em ambientes frios?",
-];
-
-const ANIMALS = [
-  { name: "Cachorro", icon: "🐶", answers: { 0: true, 1: false, 2: true, 3: false, 4: false } },
-  { name: "Gato", icon: "🐱", answers: { 0: true, 1: false, 2: true, 3: false, 4: false } },
-  { name: "Panda", icon: "🐼", answers: { 0: true, 1: false, 2: false, 3: false, 4: true } },
-  { name: "Golfinho", icon: "🐬", answers: { 0: true, 1: true, 2: false, 3: false, 4: false } },
-  { name: "Tubarão", icon: "🦈", answers: { 0: false, 1: true, 2: false, 3: false, 4: true } },
-  { name: "Pássaro", icon: "🐦", answers: { 0: false, 1: false, 2: false, 3: true, 4: true } },
-  { name: "Borboleta", icon: "🦋", answers: { 0: false, 1: false, 2: false, 3: true, 4: false } },
-  { name: "Sapo", icon: "🐸", answers: { 0: false, 1: true, 2: false, 3: false, 4: false } },
-  { name: "Leão", icon: "🦁", answers: { 0: true, 1: false, 2: false, 3: false, 4: true } },
-  { name: "Elefante", icon: "🐘", answers: { 0: true, 1: false, 2: false, 3: false, 4: true } },
-];
-
-function buildEmptyAnswers() {
-  return Object.fromEntries(QUESTION_BANK.map((_, index) => [index, UNANSWERED]));
-}
-
-function getAnimalGuess(answers) {
-  const scored = ANIMALS.map((animal) => {
-    let score = 0;
-
-    Object.entries(animal.answers).forEach(([key, value]) => {
-      const answer = answers[Number(key)];
-
-      if (answer === UNANSWERED || answer === UNKNOWN) {
-        score += 0.5;
-      } else if (answer === value) {
-        score += 2;
-      } else {
-        score -= 1.5;
-      }
+async function requestApi(path, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
     });
+  } catch {
+    throw new Error(`Não foi possível acessar a API em ${API_URL}. Confirme se o backend está ativo e se o endereço está acessível pelo navegador.`);
+  }
+  const data = await response.json().catch(() => ({}));
 
-    return { animal, score };
-  });
+  if (!response.ok) {
+    const detail = typeof data.detail === "string" ? data.detail : "Não foi possível comunicar com a API.";
+    throw new Error(detail);
+  }
 
-  return scored.sort((left, right) => right.score - left.score)[0].animal;
+  return data;
 }
 
 export default function GamePage({ onBackHome }) {
-  const [step, setStep] = useState("questions");
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState(buildEmptyAnswers);
+  const [step, setStep] = useState("loading");
+  const [gameId, setGameId] = useState("");
+  const [questionHistory, setQuestionHistory] = useState([]);
+  const [questionPosition, setQuestionPosition] = useState(0);
+  const [roundNumber, setRoundNumber] = useState(1);
+  const [answers, setAnswers] = useState({});
   const [guess, setGuess] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [animalName, setAnimalName] = useState("");
+  const [differentiatingQuestion, setDifferentiatingQuestion] = useState("");
+  const [differentiatingAnswer, setDifferentiatingAnswer] = useState("yes");
   const [saveMessage, setSaveMessage] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [wrongAttempts, setWrongAttempts] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const hasStarted = useRef(false);
+  const currentQuestion = questionHistory[questionPosition] ?? null;
+  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
 
-  const attemptStart = wrongAttempts === 0 ? 0 : QUESTIONS_PER_ATTEMPT;
-  const attemptEnd = Math.min(attemptStart + QUESTIONS_PER_ATTEMPT, QUESTION_BANK.length);
+  function applyGameStep(data, { answer, newRound = false } = {}) {
+    if (answer !== undefined && currentQuestion) {
+      setAnswers((previous) => ({ ...previous, [currentQuestion.id]: answer }));
+    }
+    setFeedback(data.message ?? "");
 
-  const currentQuestion = QUESTION_BANK[questionIndex];
-  const answeredCount = Object.entries(answers)
-    .filter(([key, value]) => Number(key) >= attemptStart && Number(key) < attemptEnd && value !== UNANSWERED)
-    .length;
-  const progressValue = (answeredCount / QUESTIONS_PER_ATTEMPT) * 100;
-  const currentAnswer = answers[questionIndex];
-
-  function getNextQuestionIndex(currentValue) {
-    const candidateIndexes = [];
-
-    for (let index = attemptStart; index < attemptEnd; index += 1) {
-      if (answers[index] === UNANSWERED || answers[index] === UNKNOWN) {
-        candidateIndexes.push(index);
+    if (data.status === "playing") {
+      if (newRound) {
+        setRoundNumber((previous) => previous + 1);
+        setQuestionHistory([data.question]);
+        setQuestionPosition(0);
+      } else {
+        const existingPosition = questionHistory.findIndex((item) => item.id === data.question.id);
+        if (existingPosition >= 0) {
+          setQuestionPosition(existingPosition);
+        } else {
+          const updatedHistory = [
+            ...questionHistory.slice(0, questionPosition + 1),
+            data.question,
+          ];
+          setQuestionHistory(updatedHistory);
+          setQuestionPosition(updatedHistory.length - 1);
+        }
       }
-    }
-
-    if (candidateIndexes.length === 0) {
-      return Math.min(currentValue, attemptEnd - 1);
-    }
-
-    const nextIndex = candidateIndexes.find((index) => index > currentValue) ?? candidateIndexes[0];
-    return nextIndex;
-  }
-
-  function setAnswer(value) {
-    const updatedAnswers = {
-      ...answers,
-      [questionIndex]: value,
-    };
-
-    setAnswers(updatedAnswers);
-    setFeedback("");
-
-    const nextQuestionIndex = getNextQuestionIndex(questionIndex);
-    if (nextQuestionIndex > questionIndex) {
-      setQuestionIndex(nextQuestionIndex);
-      return;
-    }
-
-    const nextGuess = getAnimalGuess(updatedAnswers);
-    setGuess(nextGuess);
-    setStep("guess");
-  }
-
-  function handleBackQuestion() {
-    if (questionIndex === 0) {
-      return;
-    }
-
-    setQuestionIndex((previous) => previous - 1);
-    setFeedback("");
-  }
-
-  function handleNextQuestion() {
-    const nextQuestionIndex = getNextQuestionIndex(questionIndex);
-
-    if (nextQuestionIndex > questionIndex) {
-      setQuestionIndex(nextQuestionIndex);
-      return;
-    }
-
-    const nextGuess = getAnimalGuess(answers);
-    setGuess(nextGuess);
-    setStep("guess");
-  }
-
-  function handleGuessResult(isCorrect) {
-    if (isCorrect) {
-      setFeedback(`Acertou! Eu sabia que era ${guess.name}!`);
-      setStep("success");
-      return;
-    }
-
-    if (wrongAttempts >= 1) {
-      setFeedback("Não consegui identificar o animal desta vez.");
+      setStep("questions");
+    } else if (data.status === "guessing") {
+      setGuess(data.guess);
+      setStep("guess");
+    } else if (data.status === "limit_reached") {
+      setGuess(data.guess);
       setStep("learning");
-      return;
+    } else if (data.status === "finished") {
+      setStep("success");
+    } else {
+      throw new Error("A API retornou uma etapa de jogo desconhecida.");
     }
+  }
 
-    setWrongAttempts((previous) => previous + 1);
-    setFeedback("Poxa, vou tentar outra vez com novas perguntas para chegar mais perto do seu animal.");
-    setQuestionIndex(QUESTIONS_PER_ATTEMPT);
-    setStep("questions");
+  async function startGame() {
+    setStep("loading");
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const data = await requestApi("/api/start", { method: "POST" });
+      setGameId(data.gameId);
+      setQuestionHistory([data.question]);
+      setQuestionPosition(0);
+      setRoundNumber(1);
+      setAnswers({});
+      setGuess(null);
+      setFeedback("");
+      setAnimalName("");
+      setDifferentiatingQuestion("");
+      setDifferentiatingAnswer("yes");
+      setSaveMessage("");
+      setStep("questions");
+    } catch (requestError) {
+      setError(requestError.message);
+      setStep("error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  useEffect(() => {
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+    startGame();
+  }, []);
+
+  async function submitAnswer(answer) {
+    if (!currentQuestion || isSubmitting) return;
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const data = await requestApi("/api/answer", {
+        method: "POST",
+        body: JSON.stringify({ gameId, questionId: currentQuestion.id, answer }),
+      });
+      applyGameStep(data, { answer });
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleGuessResult(accepted) {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const data = await requestApi("/api/guess-feedback", {
+        method: "POST",
+        body: JSON.stringify({ gameId, accepted }),
+      });
+      applyGameStep(data, { newRound: !accepted && data.status === "playing" });
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function handleLearningSubmit(event) {
     event.preventDefault();
 
-    if (!animalName.trim()) {
-      setSaveMessage("Informe o nome do animal para continuar.");
+    if (!animalName.trim() || !differentiatingQuestion.trim()) {
+      setSaveMessage("Informe o nome do animal e uma característica que o diferencie.");
       return;
     }
 
-    const payload = {
-      animal: animalName.trim(),
-      respostas: QUESTION_BANK.map((question, index) => {
-        const value = answers[index];
-
-        return {
-          pergunta: question,
-          resposta: value === UNANSWERED || value === UNKNOWN ? "nao-sei" : value ? "sim" : "nao",
-        };
-      }),
-      data: new Date().toISOString(),
-    };
-
-    setIsSaving(true);
+    setIsSubmitting(true);
+    setError("");
     setSaveMessage("");
 
     try {
-      const response = await fetch(`${API_URL}/api/animals/learn`, {
+      const data = await requestApi("/api/learn", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          gameId,
+          animalName: animalName.trim(),
+          differentiatingQuestionText: differentiatingQuestion.trim(),
+          differentiatingQuestionAnswerForNewAnimal: differentiatingAnswer,
+        }),
       });
-
-      if (!response.ok) {
-        throw new Error("A API não respondeu como esperado.");
-      }
-
-      setSaveMessage("Ótimo! Esse animal foi salvo no banco de conhecimento do Animator.");
-    } catch {
-      const savedAnimals = JSON.parse(localStorage.getItem("animator_animals") ?? "[]");
-      localStorage.setItem(
-        "animator_animals",
-        JSON.stringify([...savedAnimals, payload]),
-      );
-      setSaveMessage("A API não está disponível, então o animal foi salvo localmente para continuar a aprendizagem.");
+      setFeedback(data.message ?? "Animal aprendido com sucesso!");
+      setStep("learned");
+    } catch (requestError) {
+      setError(requestError.message);
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   }
 
   function resetGame() {
-    setStep("questions");
-    setQuestionIndex(0);
-    setAnswers(buildEmptyAnswers());
-    setGuess(null);
-    setFeedback("");
-    setAnimalName("");
-    setSaveMessage("");
-    setWrongAttempts(0);
+    startGame();
+  }
+
+  if (step === "loading") {
+    return (
+      <main className="game-page-shell">
+        <section className="game-card loading-state" aria-live="polite">
+          <PawPrint size={28} />
+          <p>Conectando ao Animator...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (step === "error") {
+    return (
+      <main className="game-page-shell">
+        <section className="game-card error-state">
+          <div className="game-topbar">
+            <button type="button" className="back-button" onClick={onBackHome}>
+              <ArrowLeft size={16} /> Voltar ao início
+            </button>
+            <div className="brand-pill"><PawPrint size={16} /> Animator</div>
+          </div>
+          <p className="api-error" role="alert">{error}</p>
+          <button type="button" className="primary-button" onClick={startGame} disabled={isSubmitting}>
+            Tentar novamente
+          </button>
+        </section>
+      </main>
+    );
   }
 
   if (step === "guess") {
@@ -247,7 +246,7 @@ export default function GamePage({ onBackHome }) {
           </div>
 
           <div className="guess-animal">
-            <span className="guess-icon" aria-hidden="true">{guess?.icon ?? "🐾"}</span>
+            <span className="guess-icon" aria-hidden="true">🐾</span>
             <div>
               <p className="guess-label">Meu palpite</p>
               <h2>{guess?.name ?? "Animal"}</h2>
@@ -255,19 +254,20 @@ export default function GamePage({ onBackHome }) {
           </div>
 
           <div className="answer-actions split-actions">
-            <button type="button" className="success-button" onClick={() => handleGuessResult(true)}>
+            <button type="button" className="success-button" onClick={() => handleGuessResult(true)} disabled={isSubmitting}>
               <Check size={18} /> Acertou
             </button>
-            <button type="button" className="danger-button" onClick={() => handleGuessResult(false)}>
+            <button type="button" className="danger-button" onClick={() => handleGuessResult(false)} disabled={isSubmitting}>
               <X size={18} /> Errou
             </button>
           </div>
+          {error && <p className="api-error" role="alert">{error}</p>}
         </section>
       </main>
     );
   }
 
-  if (step === "success") {
+  if (step === "success" || step === "learned") {
     return (
       <main className="game-page-shell">
         <section className="game-card success-card">
@@ -281,11 +281,9 @@ export default function GamePage({ onBackHome }) {
             </div>
           </div>
 
-          <div className="success-visual">
-            <span role="img" aria-label="animal vencedor">{guess?.icon ?? "🐾"}</span>
-          </div>
+          <div className="success-visual"><span role="img" aria-label="animal">🐾</span></div>
 
-          <h1>Excelente! Eu acertei.</h1>
+          <h1>{step === "learned" ? "Animal aprendido!" : "Excelente! Eu acertei."}</h1>
           <p className="result-message">{feedback}</p>
 
           <button type="button" className="primary-button" onClick={resetGame}>
@@ -326,12 +324,34 @@ export default function GamePage({ onBackHome }) {
               value={animalName}
               onChange={(event) => setAnimalName(event.target.value)}
               placeholder="Ex.: Hipopótamo"
+              required
             />
+
+            <label htmlFor="differentiating-question">Uma característica que o diferencia</label>
+            <input
+              id="differentiating-question"
+              value={differentiatingQuestion}
+              onChange={(event) => setDifferentiatingQuestion(event.target.value)}
+              placeholder="Ex.: Ele tem listras?"
+              required
+            />
+
+            <label htmlFor="differentiating-answer">Resposta para esse animal</label>
+            <select
+              id="differentiating-answer"
+              value={differentiatingAnswer}
+              onChange={(event) => setDifferentiatingAnswer(event.target.value)}
+            >
+              <option value="yes">Sim</option>
+              <option value="no">Não</option>
+            </select>
 
             {saveMessage && <p className="save-message">{saveMessage}</p>}
 
-            <button type="submit" className="primary-button" disabled={isSaving}>
-              {isSaving ? "Salvando..." : "Salvar animal"}
+            {error && <p className="api-error" role="alert">{error}</p>}
+
+            <button type="submit" className="primary-button" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : "Salvar animal"}
             </button>
           </form>
 
@@ -357,49 +377,63 @@ export default function GamePage({ onBackHome }) {
         </div>
 
         <div className="question-counter">
-          <span className="eyebrow">Pergunta {questionIndex + 1}</span>
+          <span className="eyebrow">Rodada {roundNumber} · Pergunta {questionPosition + 1} de 5</span>
         </div>
 
         <div className="question-box">
           <p className="question-label">Pergunta atual</p>
-          <h1>{currentQuestion}</h1>
+          <h1>{currentQuestion?.text}</h1>
         </div>
 
         <div className="answer-actions">
           <button
             type="button"
-            className={currentAnswer === true ? "answer-button active yes" : "answer-button yes"}
-            onClick={() => setAnswer(true)}
+            className={currentAnswer === "yes" ? "answer-button yes active" : "answer-button yes"}
+            onClick={() => submitAnswer("yes")}
+            disabled={isSubmitting}
           >
             Sim
           </button>
           <button
             type="button"
-            className={currentAnswer === false ? "answer-button active no" : "answer-button no"}
-            onClick={() => setAnswer(false)}
+            className={currentAnswer === "no" ? "answer-button no active" : "answer-button no"}
+            onClick={() => submitAnswer("no")}
+            disabled={isSubmitting}
           >
             Não
           </button>
           <button
             type="button"
-            className={currentAnswer === UNKNOWN ? "answer-button active neutral" : "answer-button neutral"}
-            onClick={() => setAnswer(UNKNOWN)}
+            className={currentAnswer === "dont_know" ? "answer-button neutral active" : "answer-button neutral"}
+            onClick={() => submitAnswer("dont_know")}
+            disabled={isSubmitting}
           >
             Não sei
           </button>
         </div>
 
-        {feedback && <p className="status-message">{feedback}</p>}
-
         <div className="navigation-actions">
-          <button type="button" className="ghost-button" onClick={handleBackQuestion} disabled={questionIndex === 0}>
-            <ArrowLeft size={16} /> Voltar
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setQuestionPosition((position) => Math.max(0, position - 1))}
+            disabled={questionPosition === 0 || isSubmitting}
+          >
+            <ArrowLeft size={16} /> Anterior
           </button>
-
-          <button type="button" className="primary-button" onClick={handleNextQuestion}>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => setQuestionPosition((position) => Math.min(questionHistory.length - 1, position + 1))}
+            disabled={!currentAnswer || questionPosition >= questionHistory.length - 1 || isSubmitting}
+          >
             Próxima <ArrowRight size={16} />
           </button>
         </div>
+
+        {feedback && <p className="status-message">{feedback}</p>}
+        {error && <p className="api-error" role="alert">{error}</p>}
+        {isSubmitting && <p className="small-copy" aria-live="polite">Processando resposta...</p>}
       </section>
     </main>
   );

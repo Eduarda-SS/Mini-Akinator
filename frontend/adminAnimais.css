@@ -25,7 +25,6 @@
   margin-bottom: 26px;
 }
 .animais-header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.animais-btn.voltar-admin { text-decoration: none; }
 .animais-eyebrow {
   display: flex;
   gap: 7px;
@@ -61,6 +60,21 @@
 .animais-btn.secundario:hover:not(:disabled) { border-color: #a9d17f; }
 .animais-btn.perigo { color: #2a0f0c; background: #ffaaa1; }
 .animais-btn.perigo:hover:not(:disabled) { transform: translateY(-1px); background: #ffbdb6; }
+.animais-btn.voltar-admin {
+  height: auto;
+  margin: 0 0 22px;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 0;
+  color: #b6c1b8;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+  transition: color .2s ease, transform .15s ease;
+}
+.animais-btn.voltar-admin:hover { color: #fff; transform: translateX(-2px); }
+.animais-btn.voltar-admin:focus-visible { outline: 2px solid #a9d17f; outline-offset: 4px; border-radius: 6px; }
 
 .animais-icon-button {
   width: 36px;

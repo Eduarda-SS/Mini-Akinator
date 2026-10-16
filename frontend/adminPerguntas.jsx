@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import "./adminPerguntas.css";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+const API_URL = (import.meta.env.VITE_ADMIN_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 // Se o backend usar outros caminhos, basta ajustar aqui.
@@ -43,10 +43,11 @@ async function request(path, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    const detail = typeof data.detail === "string" ? data.detail : data.message;
     const error = new Error(
       response.status === 401
         ? "Sessão expirada. Faça login novamente."
-        : data.message || "Algo deu errado. Tente novamente.",
+        : detail || "Algo deu errado. Tente novamente.",
     );
     error.status = response.status;
     throw error;

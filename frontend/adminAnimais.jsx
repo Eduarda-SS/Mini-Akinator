@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   Check,
   LoaderCircle,
   PawPrint,
@@ -17,7 +18,7 @@ import "./adminAnimais.css";
 /* ──────────────────────────────────────────────────────────────────────────
    Tela de admin — CRUD de animais (autor: Jonas)
 
-   Contrato esperado da API (todas as rotas usam cookie de sessão):
+  Contrato da API:
      GET    /api/admin/animais          -> [{ id, nome, criado_em,
                                               caracteristicas: [{ caracteristica_id, resposta }] }]
      POST   /api/admin/animais          body { nome, caracteristicas: [...] }
@@ -25,13 +26,13 @@ import "./adminAnimais.css";
      DELETE /api/admin/animais/:id
      GET    /api/admin/caracteristicas  -> [{ id, pergunta }]   (somente leitura aqui)
 
-   Erros: resposta não-2xx com JSON { message } — a mensagem é exibida na tela.
+  Erros: resposta não-2xx com JSON { detail } — a mensagem é exibida na tela.
    "resposta" é true (Sim) ou false (Não). Característica ausente = não definida.
 
    Para ver a tela sem backend, crie um .env local com VITE_USE_MOCK=true.
    ────────────────────────────────────────────────────────────────────────── */
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+const API_URL = (import.meta.env.VITE_ADMIN_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 
 // Se o backend usar outros caminhos, basta ajustar aqui.
@@ -60,10 +61,11 @@ async function request(path, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    const detail = typeof data.detail === "string" ? data.detail : data.message;
     const error = new Error(
       response.status === 401
         ? "Sessão expirada. Faça login novamente."
-        : data.message || "Algo deu errado. Tente novamente.",
+        : detail || "Algo deu errado. Tente novamente.",
     );
     error.status = response.status;
     throw error;
@@ -437,6 +439,10 @@ export default function AdminAnimais() {
   return (
     <main className="animais-page">
       <section className="animais-container" aria-labelledby="animais-titulo">
+        <a className="animais-btn voltar-admin" href="/?page=admin">
+          <ArrowLeft size={16} /> Voltar ao painel
+        </a>
+
         <header className="animais-header">
           <div>
             <div className="animais-eyebrow"><ShieldCheck size={15} /> PAINEL ADMINISTRATIVO</div>
@@ -444,9 +450,6 @@ export default function AdminAnimais() {
             <p className="animais-intro">Cadastre, edite e remova os animais que o Akinator conhece.</p>
           </div>
           <div className="animais-header-actions">
-            <a className="animais-btn secundario voltar-admin" href="/?page=admin">
-              ← Voltar ao painel
-            </a>
             <button
               className="animais-btn primario"
               type="button"
