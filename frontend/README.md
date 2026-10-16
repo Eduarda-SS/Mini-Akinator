@@ -17,7 +17,7 @@ Após entrar, o painel oferece links para as páginas de animais e perguntas. Es
 
 ## Executar a API do jogo
 
-Em outro terminal, entre em `api/API-AKINATOR-ANIMAIS--main/akinator-api` e execute:
+Em outro terminal, entre em `api/akinator-api` e execute:
 
 ```powershell
 python -m pip install fastapi uvicorn pandas
