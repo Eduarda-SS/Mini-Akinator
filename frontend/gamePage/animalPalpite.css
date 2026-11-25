@@ -1,0 +1,71 @@
+.animal-palpite {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 18px;
+  border-radius: 20px;
+  background: linear-gradient(140deg, #f9faf6 0%, #edf7ea 100%);
+  border: 1px solid rgba(118, 159, 125, 0.12);
+}
+
+.animal-palpite-media {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #dff4d8 0%, #cce7cd 100%);
+}
+
+.animal-palpite-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.animal-palpite-icon {
+  font-size: 2.9rem;
+}
+
+.animal-palpite-info {
+  min-width: 0;
+}
+
+.animal-palpite-label {
+  margin: 0;
+  color: #637567;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.animal-palpite-info h2 {
+  margin: 6px 0 8px;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+
+.animal-palpite-descricao {
+  margin: 0;
+  color: #44564a;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 520px) {
+  .animal-palpite {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .animal-palpite-media {
+    width: 100%;
+    height: 200px;
+  }
+}

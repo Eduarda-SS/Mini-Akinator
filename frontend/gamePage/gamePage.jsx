@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import "./gamePage.css";
+import AnimalPalpite from "./AnimalPalpite.jsx";
 
 const API_URL = (import.meta.env.VITE_GAME_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
@@ -245,13 +246,7 @@ export default function GamePage({ onBackHome }) {
             <h1>Será que acertei?</h1>
           </div>
 
-          <div className="guess-animal">
-            <span className="guess-icon" aria-hidden="true">🐾</span>
-            <div>
-              <p className="guess-label">Meu palpite</p>
-              <h2>{guess?.name ?? "Animal"}</h2>
-            </div>
-          </div>
+          <AnimalPalpite nome={guess?.name ?? "Animal"} />
 
           <div className="answer-actions split-actions">
             <button type="button" className="success-button" onClick={() => handleGuessResult(true)} disabled={isSubmitting}>
