@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import AdminLogin from "/adminLogin.jsx";
 import GamePage from "./gamePage/gamePage.jsx";
+import Adivinha from "./gamePage/Adivinha.jsx";
 import "./style.css";
 import Animator from "./homepage/Animator";
 
@@ -41,7 +42,17 @@ function App() {
     return <GamePage onBackHome={() => setPage("home")} />;
   }
 
-  return <Animator onLogin={() => setPage("login")} onPlay={() => setPage("game")} />;
+  if (page === "adivinha") {
+    return <Adivinha onBackHome={() => setPage("home")} />;
+  }
+
+  return (
+    <Animator
+      onLogin={() => setPage("login")}
+      onPlay={() => setPage("game")}
+      onPlayAdivinha={() => setPage("adivinha")}
+    />
+  );
 }
 
 createRoot(document.getElementById("root")).render(

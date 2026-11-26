@@ -414,6 +414,7 @@ class Jogo:
 
 # Partidas ativas: game_id -> Jogo
 jogos: Dict[str, Jogo] = {}
+adivinha_jogos: Dict[str, Dict] = {}
 
 
 def get_jogo(game_id: str) -> Jogo:
@@ -521,6 +522,15 @@ class LearnRequest(BaseModel):
     differentiatingQuestionAnswerForNewAnimal: str  # "yes" ou "no"
 
 
+class AdivinhaGuessRequest(BaseModel):
+    gameId: str
+    animalId: int
+
+
+class AdivinhaGameRequest(BaseModel):
+    gameId: str
+
+
 class AdminAnimalCharacteristicIn(BaseModel):
     caracteristica_id: int
     resposta: bool
@@ -586,6 +596,78 @@ def avancar_jogo(jogo: Jogo) -> GameStepResponse:
 # ----------------------------------------------------------------------------
 # Endpoints
 # ----------------------------------------------------------------------------
+
+@app.get("/api/adivinha/animais")
+def adivinha_listar_animais():
+    return [{"id": animal.id, "nome": animal.nome} for animal in repository.listar_animais()]
+
+
+@app.post("/api/adivinha/start")
+def adivinha_start():
+    animais = repository.listar_animais()
+    if not animais:
+        raise HTTPException(status_code=404, detail="Não há animais disponíveis.")
+
+    animal_alvo = random.choice(animais)
+    ordem = [
+        caracteristica
+        for caracteristica in repository.listar_caracteristicas()
+        if caracteristica.atributo in animal_alvo.caracteristicas
+    ]
+    random.shuffle(ordem)
+    game_id = str(uuid.uuid4())
+    adivinha_jogos[game_id] = {
+        "animal": animal_alvo,
+        "ordem": ordem,
+        "reveladas": 0,
+    }
+    return {"gameId": game_id, "totalCaracteristicas": len(ordem)}
+
+
+@app.post("/api/adivinha/hint")
+def adivinha_hint(payload: AdivinhaGameRequest):
+    jogo = adivinha_jogos.get(payload.gameId)
+    if jogo is None:
+        raise HTTPException(status_code=404, detail="Sessão de jogo não encontrada.")
+    if jogo["reveladas"] >= len(jogo["ordem"]):
+        return {"finished": True, "hint": None}
+
+    caracteristica = jogo["ordem"][jogo["reveladas"]]
+    jogo["reveladas"] += 1
+    valor = jogo["animal"].caracteristicas.get(caracteristica.atributo)
+    return {
+        "finished": False,
+        "hint": {"text": caracteristica.pergunta, "answer": "Sim" if valor else "Não"},
+        "used": jogo["reveladas"],
+    }
+
+
+@app.post("/api/adivinha/guess")
+def adivinha_guess(payload: AdivinhaGuessRequest):
+    jogo = adivinha_jogos.get(payload.gameId)
+    if jogo is None:
+        raise HTTPException(status_code=404, detail="Sessão de jogo não encontrada.")
+    animal_escolhido = next(
+        (animal for animal in repository.listar_animais() if animal.id == payload.animalId),
+        None,
+    )
+    if animal_escolhido is None:
+        raise HTTPException(status_code=404, detail="Animal não encontrado.")
+    if animal_escolhido.id != jogo["animal"].id:
+        return {"correct": False}
+
+    score = len(jogo["ordem"]) - jogo["reveladas"]
+    nome = jogo["animal"].nome
+    del adivinha_jogos[payload.gameId]
+    return {"correct": True, "animal": nome, "score": score}
+
+
+@app.post("/api/adivinha/give-up")
+def adivinha_give_up(payload: AdivinhaGameRequest):
+    jogo = adivinha_jogos.pop(payload.gameId, None)
+    if jogo is None:
+        raise HTTPException(status_code=404, detail="Sessão de jogo não encontrada.")
+    return {"animal": jogo["animal"].nome, "used": jogo["reveladas"]}
 
 @app.post("/api/start", response_model=StartResponse)
 def start_game():

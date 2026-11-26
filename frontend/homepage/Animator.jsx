@@ -1,6 +1,6 @@
 import "./homepage.css";
 
-function Animator({ onLogin, onPlay }) {
+function Animator({ onLogin, onPlay, onPlayAdivinha }) {
   return (
     <div className="animator-page">
       <header className="navbar">
@@ -28,10 +28,16 @@ function Animator({ onLogin, onPlay }) {
             características e veja se o Animator consegue adivinhar.
           </p>
 
-          <button className="play-button" onClick={onPlay}>
-            Jogar agora
-            <span>→</span>
-          </button>
+          <div className="mode-actions">
+            <button className="play-button" onClick={onPlay}>
+              Pensar em um animal
+              <span>→</span>
+            </button>
+            <button className="play-button adivinha-button" onClick={onPlayAdivinha}>
+              Jogar Modo Adivinha
+              <span>→</span>
+            </button>
+          </div>
         </div>
 
         <div className="animal-decoration">
