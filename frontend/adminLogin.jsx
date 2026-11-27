@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, PawPrint, ShieldCheck } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 const DEMO_EMAIL = "admin@akinator.com";
 const DEMO_PASSWORD = "Admin123!";
 
@@ -15,20 +15,6 @@ export default function AdminLogin({ onBack, onLogin }) {
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
-
-    // Conta fixa apenas para testar o front localmente. Em produção, a
-    // autenticação sempre passa pela API e nunca aceita essas credenciais.
-    if (import.meta.env.DEV) {
-      if (
-        email.trim().toLowerCase() === DEMO_EMAIL &&
-        password === DEMO_PASSWORD
-      ) {
-        onLogin?.();
-      } else {
-        setError("E-mail ou senha de demonstração incorretos.");
-      }
-      return;
-    }
 
     setLoading(true);
 

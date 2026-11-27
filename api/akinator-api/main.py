@@ -9,14 +9,23 @@ Dependências:
 import uuid
 import random
 import unicodedata
+import os
+import time
+import secrets
+import hmac
+
+import json
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
+from dotenv import load_dotenv
+
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Cookie, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+load_dotenv()
 # ----------------------------------------------------------------------------
 # App e CORS
 # ----------------------------------------------------------------------------
@@ -555,6 +564,9 @@ class AdminAnimalCharacteristicIn(BaseModel):
     caracteristica_id: int
     resposta: bool
 
+class AdminLoginRequest(BaseModel):
+    email: str
+    senha: str
 
 class AdminAnimalIn(BaseModel):
     nome: str = Field(min_length=1, max_length=100)
@@ -586,6 +598,47 @@ class GameStepResponse(BaseModel):
     message: Optional[str] = None
     attempt: Optional[int] = None
 
+# ----------------------------------------------------------------------------
+# Autenticação administrativa
+# ----------------------------------------------------------------------------
+
+ADMIN_USERS = json.loads(os.getenv("ADMIN_USERS", "[]"))
+
+if not ADMIN_USERS:
+    raise RuntimeError(
+        "É necessário cadastrar pelo menos um administrador no .env"
+    )
+
+TEMPO_SESSAO = 8 * 60 * 60  # 8 horas
+
+# Armazena os tokens de sessão em memória
+sessoes_admin: Dict[str, float] = {}
+
+
+def verificar_admin(
+    admin_session: Optional[str] = Cookie(default=None)
+):
+    """
+    Verifica se existe uma sessão administrativa válida.
+    """
+
+    if not admin_session:
+        raise HTTPException(
+            status_code=401,
+            detail="Autenticação necessária."
+        )
+
+    expiracao = sessoes_admin.get(admin_session)
+
+    if expiracao is None or expiracao < time.time():
+        sessoes_admin.pop(admin_session, None)
+
+        raise HTTPException(
+            status_code=401,
+            detail="Sessão inválida ou expirada."
+        )
+
+    return True
 
 # ----------------------------------------------------------------------------
 # Fluxo compartilhado entre /api/answer e /api/guess-feedback
@@ -616,6 +669,67 @@ def avancar_jogo(jogo: Jogo) -> GameStepResponse:
 # ----------------------------------------------------------------------------
 # Endpoints
 # ----------------------------------------------------------------------------
+
+@app.post("/api/admin/login")
+def admin_login(payload: AdminLoginRequest, response: Response):
+
+    usuario_valido = any(
+        hmac.compare_digest(
+            payload.email.strip().lower(),
+            usuario["email"].strip().lower()
+        )
+        and hmac.compare_digest(
+            payload.senha,
+            usuario["senha"]
+        )
+        for usuario in ADMIN_USERS
+    )
+
+    if not usuario_valido:
+        raise HTTPException(
+            status_code=401,
+            detail="E-mail ou senha incorretos."
+        )
+
+    # Cria um token de sessão
+    token = secrets.token_urlsafe(32)
+
+    # Registra a expiração
+    sessoes_admin[token] = time.time() + TEMPO_SESSAO
+
+    # Envia o token em um cookie protegido
+    response.set_cookie(
+        key="admin_session",
+        value=token,
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        max_age=TEMPO_SESSAO,
+        path="/"
+    )
+
+    return {
+        "message": "Login realizado com sucesso."
+    }
+
+
+@app.post("/api/admin/logout")
+def admin_logout(
+    response: Response,
+    admin_session: Optional[str] = Cookie(default=None)
+):
+
+    if admin_session:
+        sessoes_admin.pop(admin_session, None)
+
+    response.delete_cookie(
+        key="admin_session",
+        path="/"
+    )
+
+    return {
+        "message": "Logout realizado com sucesso."
+    }
 
 @app.get("/api/adivinha/animais")
 def adivinha_listar_animais():
@@ -825,12 +939,12 @@ def learn_new_animal(payload: LearnRequest):
     }
 
 
-@app.get("/api/admin/animais")
+@app.get("/api/admin/animais", dependencies=[Depends(verificar_admin)])
 def admin_listar_animais():
     return [animal_admin_dict(animal) for animal in repository.listar_animais()]
 
 
-@app.post("/api/admin/animais")
+@app.post("/api/admin/animais", dependencies=[Depends(verificar_admin)])
 def admin_criar_animal(payload: AdminAnimalIn):
     nome = payload.nome.strip()
     if not nome:
@@ -843,7 +957,7 @@ def admin_criar_animal(payload: AdminAnimalIn):
     return animal_admin_dict(animal)
 
 
-@app.put("/api/admin/animais/{animal_id}")
+@app.put("/api/admin/animais/{animal_id}", dependencies=[Depends(verificar_admin)])
 def admin_atualizar_animal(animal_id: int, payload: AdminAnimalIn):
     nome = payload.nome.strip()
     if not nome:
@@ -858,7 +972,7 @@ def admin_atualizar_animal(animal_id: int, payload: AdminAnimalIn):
     return animal_admin_dict(animal)
 
 
-@app.delete("/api/admin/animais/{animal_id}")
+@app.delete("/api/admin/animais/{animal_id}", dependencies=[Depends(verificar_admin)])
 def admin_remover_animal(animal_id: int):
     animal = repository.remover_animal(animal_id)
     if animal is None:
@@ -866,12 +980,13 @@ def admin_remover_animal(animal_id: int):
     return {"message": f"Animal '{animal.nome}' excluído."}
 
 
-@app.get("/api/admin/caracteristicas")
+
+@app.get("/api/admin/caracteristicas", dependencies=[Depends(verificar_admin)])
 def admin_listar_caracteristicas():
     return [pergunta_admin_dict(item) for item in repository.listar_caracteristicas()]
 
 
-@app.post("/api/admin/caracteristicas")
+@app.post("/api/admin/caracteristicas", dependencies=[Depends(verificar_admin)])
 def admin_criar_caracteristica(payload: AdminQuestionIn):
     pergunta = payload.pergunta.strip()
     if not pergunta:
@@ -883,7 +998,7 @@ def admin_criar_caracteristica(payload: AdminQuestionIn):
     return pergunta_admin_dict(caracteristica)
 
 
-@app.put("/api/admin/caracteristicas/{caracteristica_id}")
+@app.put("/api/admin/caracteristicas/{caracteristica_id}", dependencies=[Depends(verificar_admin)])
 def admin_atualizar_caracteristica(caracteristica_id: int, payload: AdminQuestionIn):
     pergunta = payload.pergunta.strip()
     if not pergunta:
@@ -897,7 +1012,7 @@ def admin_atualizar_caracteristica(caracteristica_id: int, payload: AdminQuestio
     return pergunta_admin_dict(caracteristica)
 
 
-@app.delete("/api/admin/caracteristicas/{caracteristica_id}")
+@app.delete("/api/admin/caracteristicas/{caracteristica_id}", dependencies=[Depends(verificar_admin)])
 def admin_remover_caracteristica(caracteristica_id: int):
     caracteristica = repository.remover_caracteristica(caracteristica_id)
     if caracteristica is None:
