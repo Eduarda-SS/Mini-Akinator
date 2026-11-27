@@ -153,6 +153,42 @@
   text-align: left;
 }
 
+.adivinha-setup {
+  justify-items: stretch;
+  text-align: left;
+}
+
+.adivinha-setup h1,
+.adivinha-setup p,
+.adivinha-setup .eyebrow {
+  text-align: center;
+}
+
+.adivinha-setup label {
+  margin-top: 4px;
+  color: #4c6654;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.setup-field-help {
+  margin-top: -10px;
+  color: #748077;
+  font-size: 0.78rem;
+}
+
+.adivinha-setup input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid rgba(89, 122, 95, 0.2);
+  border-radius: 12px;
+  background: #f6f9f4;
+  color: #1d2c22;
+  font: inherit;
+}
+
 .adivinha-loading {
   color: #55705c;
 }
