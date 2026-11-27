@@ -66,7 +66,7 @@
 
 .hint-row {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   min-height: 46px;
@@ -84,6 +84,12 @@
 
 .hint-row strong {
   color: #26734a;
+}
+
+.hint-repeated {
+  color: #748077;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .adivinha-actions {
@@ -125,71 +131,12 @@
   text-transform: uppercase;
 }
 
-.animal-search-input {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 0 14px;
-  border: 1px solid rgba(89, 122, 95, 0.22);
-  border-radius: 10px;
-  background: #fbfcf9;
-  color: #5a7661;
-}
-
-.animal-search-input:focus-within {
-  outline: 3px solid rgba(82, 157, 94, 0.12);
-  border-color: rgba(52, 122, 74, 0.45);
-}
-
-.animal-search-input input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #1d2c22;
-  font: inherit;
-}
-
-.animal-search-results {
-  position: absolute;
-  z-index: 3;
-  top: 78px;
-  right: 0;
-  left: 0;
-  max-height: 220px;
-  overflow: auto;
-  border: 1px solid rgba(89, 122, 95, 0.22);
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 12px 24px rgba(33, 69, 48, 0.12);
-}
-
-.animal-search-results button {
-  width: 100%;
-  padding: 11px 14px;
-  border: 0;
-  background: transparent;
-  color: #263d2e;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-
-.animal-search-results button:hover,
-.animal-search-results button[aria-selected="true"] {
-  background: #edf5e9;
-}
-
-.animal-search-results p {
-  margin: 0;
-  padding: 12px 14px;
-  color: #68756c;
-}
-
 .guess-submit {
   width: 100%;
+}
+
+.guess-submit:disabled {
+  opacity: 1;
 }
 
 .adivinha-loading,
@@ -199,6 +146,11 @@
   gap: 16px;
   padding: 36px 12px;
   text-align: center;
+}
+
+.adivinha-result .animal-palpite {
+  width: 100%;
+  text-align: left;
 }
 
 .adivinha-loading {
@@ -229,5 +181,9 @@
     grid-template-columns: 28px minmax(0, 1fr) auto;
     gap: 8px;
     font-size: 0.9rem;
+  }
+
+  .hint-repeated {
+    grid-column: 2 / -1;
   }
 }

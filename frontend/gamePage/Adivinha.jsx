@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Lightbulb, PawPrint, RotateCcw, Search, Trophy } from "lucide-react";
 import "./gamePage.css";
 import "./adivinha.css";
+import AnimalPalpite from "./AnimalPalpite.jsx";
 
 const API_URL = (import.meta.env.VITE_GAME_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
@@ -29,6 +30,7 @@ function normalizeText(text) {
 export default function Adivinha({ onBackHome }) {
   const [gameId, setGameId] = useState("");
   const [animals, setAnimals] = useState([]);
+  const [attemptedAnimals, setAttemptedAnimals] = useState([]);
   const [totalHints, setTotalHints] = useState(0);
   const [hints, setHints] = useState([]);
   const [search, setSearch] = useState("");
@@ -44,6 +46,7 @@ export default function Adivinha({ onBackHome }) {
     setMessage("");
     setResult(null);
     setHints([]);
+    setAttemptedAnimals([]);
     setSearch("");
     setSelectedId("");
     try {
@@ -68,7 +71,7 @@ export default function Adivinha({ onBackHome }) {
   }, []);
 
   async function getHint() {
-    if (isBusy || hints.length >= totalHints) return;
+    if (isBusy) return;
     setIsBusy(true);
     setMessage("");
     try {
@@ -76,7 +79,7 @@ export default function Adivinha({ onBackHome }) {
         method: "POST",
         body: JSON.stringify({ gameId }),
       });
-      if (data.hint) setHints((current) => [...current, data.hint]);
+      if (data.hint) setHints((current) => [...current, { ...data.hint, repeated: data.repeated }]);
     } catch (requestError) {
       setMessage(requestError.message);
     } finally {
@@ -99,6 +102,13 @@ export default function Adivinha({ onBackHome }) {
         setStatus("won");
       } else {
         setMessage("Ainda não! Escolha outro animal e tente novamente.");
+        const attemptedAnimal = animals.find((animal) => String(animal.id) === selectedId);
+        if (attemptedAnimal) {
+          setAttemptedAnimals((current) => current.some((animal) => animal.id === attemptedAnimal.id)
+            ? current
+            : [...current, attemptedAnimal]);
+        }
+        setSearch("");
         setSelectedId("");
       }
     } catch (requestError) {
@@ -126,8 +136,10 @@ export default function Adivinha({ onBackHome }) {
     }
   }
 
+  const attemptedIds = new Set(attemptedAnimals.map((animal) => String(animal.id)));
   const filteredAnimals = animals
     .filter((animal) => normalizeText(animal.nome).includes(normalizeText(search)))
+    .filter((animal) => !attemptedIds.has(String(animal.id)))
     .slice(0, 8);
 
   return (
@@ -153,11 +165,11 @@ export default function Adivinha({ onBackHome }) {
             <header className="adivinha-heading">
               <span className="eyebrow accent">Descubra o animal</span>
               <h1>Qual animal estou pensando?</h1>
-              <p>Peça pistas ou arrisque um palpite. Cada pista usada reduz sua pontuação.</p>
+              <p>Peça pistas sem limite ou arrisque um palpite. Depois de revelar todas, as pistas se repetem; cada uma reduz sua pontuação.</p>
             </header>
 
             <div className="adivinha-scoreline">
-              <span><Lightbulb size={17} /> {hints.length} de {totalHints} características reveladas</span>
+              <span><Lightbulb size={17} /> {hints.length} características reveladas</span>
               <strong>{Math.max(0, totalHints - hints.length)} pontos possíveis</strong>
             </div>
 
@@ -167,13 +179,14 @@ export default function Adivinha({ onBackHome }) {
                   <span className="hint-number">{String(index + 1).padStart(2, "0")}</span>
                   <span>{hint.text}</span>
                   <strong>{hint.answer}</strong>
+                  {hint.repeated && <small className="hint-repeated">Repetida</small>}
                 </div>
               )) : <p className="empty-hints">Nenhuma característica revelada ainda.</p>}
             </section>
 
             <div className="adivinha-actions">
-              <button type="button" className="secondary-button" onClick={getHint} disabled={isBusy || hints.length >= totalHints}>
-                <Lightbulb size={17} /> {hints.length >= totalHints ? "Sem mais pistas" : "Revelar característica"}
+              <button type="button" className="secondary-button" onClick={getHint} disabled={isBusy || totalHints === 0}>
+                <Lightbulb size={17} /> {isBusy ? "Revelando..." : "Revelar característica"}
               </button>
               <button type="button" className="give-up-button" onClick={giveUp} disabled={isBusy}>
                 Desistir
@@ -193,7 +206,7 @@ export default function Adivinha({ onBackHome }) {
                   autoComplete="off"
                 />
               </div>
-              {search && (
+              {search && !selectedId && (
                 <div className="animal-search-results" role="listbox" aria-label="Animais disponíveis">
                   {filteredAnimals.map((animal) => (
                     <button
@@ -210,15 +223,25 @@ export default function Adivinha({ onBackHome }) {
                 </div>
               )}
               <button type="submit" className="primary-button guess-submit" disabled={!selectedId || isBusy}>
-                {isBusy ? "Verificando..." : "Confirmar palpite"}
+                {isBusy ? "Verificando..." : selectedId ? "Confirmar palpite" : "Selecione um animal"}
               </button>
             </form>
+
+            <section className="attempted-animals" aria-label="Animais já tentados" aria-live="polite">
+              <h2>Animais já tentados</h2>
+              {attemptedAnimals.length ? (
+                <ul>
+                  {attemptedAnimals.map((animal) => <li key={animal.id}>{animal.nome}</li>)}
+                </ul>
+              ) : <p>Você ainda não tentou nenhum animal.</p>}
+            </section>
           </>
         ) : (
           <div className="adivinha-result">
             <div className="result-icon">{status === "won" ? <Trophy size={30} /> : <PawPrint size={30} />}</div>
             <span className="eyebrow accent">{status === "won" ? "Acertou" : "Resposta"}</span>
-            <h1>{result?.animal}</h1>
+            <h1>{status === "won" ? "Você acertou!" : "Este era o animal secreto"}</h1>
+            <AnimalPalpite nome={result?.animal ?? "Animal"} label="Animal revelado" />
             {status === "won" ? (
               <p>Você descobriu usando {result.used} {result.used === 1 ? "característica" : "características"} e fez <strong>{result.score} pontos</strong>.</p>
             ) : (

@@ -60,7 +60,7 @@ python -m venv venv
 source venv/bin/activate
 
 # 3. Instale as dependências
-pip install fastapi uvicorn pandas
+python -m pip install fastapi uvicorn pandas
 
 # 4. Inicie o servidor
-uvicorn main:app --reload
+python -m uvicorn main:app --reload

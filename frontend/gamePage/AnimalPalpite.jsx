@@ -11,7 +11,7 @@ function limitarTexto(texto, maximo = 220) {
   return ultimoPonto > 80 ? corte.slice(0, ultimoPonto + 1) : `${corte.trimEnd()}…`;
 }
 
-export default function AnimalPalpite({ nome }) {
+export default function AnimalPalpite({ nome, label = "Meu palpite" }) {
   const info = getAnimalInfo(nome);
   const [imagem, setImagem] = useState(null);
   const [extrato, setExtrato] = useState("");
@@ -52,7 +52,7 @@ export default function AnimalPalpite({ nome }) {
         )}
       </div>
       <div className="animal-palpite-info">
-        <p className="animal-palpite-label">Meu palpite</p>
+        <p className="animal-palpite-label">{label}</p>
         <h2>{nome}</h2>
         <p className="animal-palpite-descricao">{descricao}</p>
       </div>

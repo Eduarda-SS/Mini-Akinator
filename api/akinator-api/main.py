@@ -8,6 +8,7 @@ Dependências:
 
 import uuid
 import random
+import unicodedata
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
@@ -277,6 +278,19 @@ class AnimalRepository:
     def buscar_caracteristica_por_atributo(self, atributo: str) -> Optional[Caracteristica]:
         return next((c for c in self._caracteristicas if c.atributo == atributo), None)
 
+    def buscar_caracteristica_por_pergunta(self, pergunta: str) -> Optional[Caracteristica]:
+        pergunta_normalizada = normalizar_texto(pergunta)
+        return next(
+            (c for c in self._caracteristicas if normalizar_texto(c.pergunta) == pergunta_normalizada),
+            None,
+        )
+
+    def criar_caracteristica_aprendida(self, pergunta: str) -> Caracteristica:
+        atributo = f"learned_feature_{self._next_caracteristica_id}"
+        while atributo in self._atributos_validos:
+            atributo = f"{atributo}_extra"
+        return self.criar_caracteristica(atributo, pergunta)
+
     def criar_animal(self, nome: str, caracteristicas: Dict[str, bool]) -> Animal:
         novo = Animal(
             id=self._next_animal_id,
@@ -483,19 +497,19 @@ def atributos_admin_para_animal(respostas: List["AdminAnimalCharacteristicIn"]) 
 
 
 def nome_animal_em_uso(nome: str, ignorar_id: Optional[int] = None) -> bool:
-    nome_normalizado = " ".join(nome.casefold().split())
+    nome_normalizado = normalizar_texto(nome)
     return any(
         animal.id != ignorar_id
-        and " ".join(animal.nome.casefold().split()) == nome_normalizado
+        and normalizar_texto(animal.nome) == nome_normalizado
         for animal in repository.listar_animais()
     )
 
 
 def pergunta_em_uso(pergunta: str, ignorar_id: Optional[int] = None) -> bool:
-    pergunta_normalizada = " ".join(pergunta.casefold().split())
+    pergunta_normalizada = normalizar_texto(pergunta)
     return any(
         caracteristica.id != ignorar_id
-        and " ".join(caracteristica.pergunta.casefold().split()) == pergunta_normalizada
+        and normalizar_texto(caracteristica.pergunta) == pergunta_normalizada
         for caracteristica in repository.listar_caracteristicas()
     )
 
@@ -503,6 +517,12 @@ def pergunta_em_uso(pergunta: str, ignorar_id: Optional[int] = None) -> bool:
 # ----------------------------------------------------------------------------
 # Schemas (Pydantic)
 # ----------------------------------------------------------------------------
+
+def normalizar_texto(texto: str) -> str:
+    decomposed = unicodedata.normalize("NFD", texto.casefold())
+    sem_acentos = "".join(caractere for caractere in decomposed if not unicodedata.combining(caractere))
+    return " ".join(sem_acentos.split())
+
 
 class AnswerRequest(BaseModel):
     gameId: str
@@ -517,8 +537,8 @@ class GuessFeedbackRequest(BaseModel):
 
 class LearnRequest(BaseModel):
     gameId: str
-    animalName: str
-    differentiatingQuestionText: str
+    animalName: str = Field(min_length=1, max_length=100)
+    differentiatingQuestionText: str = Field(min_length=1, max_length=255)
     differentiatingQuestionAnswerForNewAnimal: str  # "yes" ou "no"
 
 
@@ -629,16 +649,18 @@ def adivinha_hint(payload: AdivinhaGameRequest):
     jogo = adivinha_jogos.get(payload.gameId)
     if jogo is None:
         raise HTTPException(status_code=404, detail="Sessão de jogo não encontrada.")
-    if jogo["reveladas"] >= len(jogo["ordem"]):
+    if not jogo["ordem"]:
         return {"finished": True, "hint": None}
 
-    caracteristica = jogo["ordem"][jogo["reveladas"]]
+    repetida = jogo["reveladas"] >= len(jogo["ordem"])
+    caracteristica = jogo["ordem"][jogo["reveladas"] % len(jogo["ordem"])]
     jogo["reveladas"] += 1
     valor = jogo["animal"].caracteristicas.get(caracteristica.atributo)
     return {
         "finished": False,
         "hint": {"text": caracteristica.pergunta, "answer": "Sim" if valor else "Não"},
         "used": jogo["reveladas"],
+        "repeated": repetida,
     }
 
 
@@ -656,7 +678,7 @@ def adivinha_guess(payload: AdivinhaGuessRequest):
     if animal_escolhido.id != jogo["animal"].id:
         return {"correct": False}
 
-    score = len(jogo["ordem"]) - jogo["reveladas"]
+    score = max(0, len(jogo["ordem"]) - jogo["reveladas"])
     nome = jogo["animal"].nome
     del adivinha_jogos[payload.gameId]
     return {"correct": True, "animal": nome, "score": score}
@@ -752,29 +774,49 @@ def learn_new_animal(payload: LearnRequest):
             detail="differentiatingQuestionAnswerForNewAnimal deve ser 'yes' ou 'no'.",
         )
 
-    atributo = payload.differentiatingQuestionText.strip().lower().replace(" ", "_")[:60]
-    caracteristica = jogo.repository.buscar_caracteristica_por_atributo(atributo)
-    if caracteristica is None:
-        caracteristica = jogo.repository.criar_caracteristica(
-            atributo=atributo,
-            pergunta=payload.differentiatingQuestionText,
-        )
+    nome = payload.animalName.strip()
+    pergunta = payload.differentiatingQuestionText.strip()
+    if not nome:
+        raise HTTPException(status_code=422, detail="Informe o nome do animal.")
+    if not pergunta:
+        raise HTTPException(status_code=422, detail="Informe a pergunta diferencial.")
 
-    # Atributos do novo animal = respostas já conhecidas na partida + a diferencial
+    nome_normalizado = normalizar_texto(nome)
+    animal_existente = next(
+        (animal for animal in jogo.repository.listar_animais() if normalizar_texto(animal.nome) == nome_normalizado),
+        None,
+    )
+    caracteristica = jogo.repository.buscar_caracteristica_por_pergunta(pergunta)
+    pergunta_existente = caracteristica is not None
+    if caracteristica is None:
+        caracteristica = jogo.repository.criar_caracteristica_aprendida(pergunta)
+
+    # Preserve informações existentes e complete apenas os atributos ausentes.
     caracteristicas_novo_animal = jogo.caminho.respostas_conhecidas()
     caracteristicas_novo_animal[caracteristica.atributo] = (resposta_nova == "yes")
 
     jogo.caminho.animal_nome = payload.animalName
-    novo_animal = jogo.repository.criar_animal(
-        nome=payload.animalName,
-        caracteristicas=caracteristicas_novo_animal,
-    )
+    if animal_existente is None:
+        animal = jogo.repository.criar_animal(nome=nome, caracteristicas=caracteristicas_novo_animal)
+    else:
+        for atributo_existente, resposta_existente in caracteristicas_novo_animal.items():
+            animal_existente.caracteristicas.setdefault(atributo_existente, resposta_existente)
+        animal = animal_existente
+
+    if animal_existente is not None and pergunta_existente:
+        message = f"O animal '{animal.nome}' e a pergunta já existiam; nenhum dado duplicado foi criado."
+    elif animal_existente is not None:
+        message = f"O animal '{animal.nome}' já existia; a nova pergunta foi adicionada ao seu caminho."
+    else:
+        message = f"Animal '{animal.nome}' aprendido com sucesso!"
 
     del jogos[payload.gameId]
 
     return {
-        "message": f"Animal '{novo_animal.nome}' aprendido com sucesso!",
-        "animal": novo_animal.to_dict(),
+        "message": message,
+        "animal": animal.to_dict(),
+        "animalExisted": animal_existente is not None,
+        "questionExisted": pergunta_existente,
         "caracteristica": {
             "id": caracteristica.id,
             "atributo": caracteristica.atributo,

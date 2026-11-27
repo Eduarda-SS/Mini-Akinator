@@ -5,6 +5,7 @@ import {
   BrainCircuit,
   Check,
   PawPrint,
+  Search,
   Sparkles,
   X,
 } from "lucide-react";
@@ -12,6 +13,10 @@ import "./gamePage.css";
 import AnimalPalpite from "./AnimalPalpite.jsx";
 
 const API_URL = (import.meta.env.VITE_GAME_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
+
+function normalizeText(text) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+}
 
 async function requestApi(path, options = {}) {
   let response;
@@ -46,6 +51,9 @@ export default function GamePage({ onBackHome }) {
   const [guess, setGuess] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [animalName, setAnimalName] = useState("");
+  const [learningAnimals, setLearningAnimals] = useState([]);
+  const [selectedLearningAnimalId, setSelectedLearningAnimalId] = useState("");
+  const [animalLookupError, setAnimalLookupError] = useState("");
   const [differentiatingQuestion, setDifferentiatingQuestion] = useState("");
   const [differentiatingAnswer, setDifferentiatingAnswer] = useState("yes");
   const [saveMessage, setSaveMessage] = useState("");
@@ -54,6 +62,9 @@ export default function GamePage({ onBackHome }) {
   const hasStarted = useRef(false);
   const currentQuestion = questionHistory[questionPosition] ?? null;
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
+  const matchingLearningAnimals = learningAnimals
+    .filter((animal) => normalizeText(animal.nome).includes(normalizeText(animalName)))
+    .slice(0, 8);
 
   function applyGameStep(data, { answer, newRound = false } = {}) {
     if (answer !== undefined && currentQuestion) {
@@ -108,6 +119,8 @@ export default function GamePage({ onBackHome }) {
       setGuess(null);
       setFeedback("");
       setAnimalName("");
+      setSelectedLearningAnimalId("");
+      setAnimalLookupError("");
       setDifferentiatingQuestion("");
       setDifferentiatingAnswer("yes");
       setSaveMessage("");
@@ -125,6 +138,22 @@ export default function GamePage({ onBackHome }) {
     hasStarted.current = true;
     startGame();
   }, []);
+
+  useEffect(() => {
+    if (step !== "learning") return undefined;
+    let active = true;
+    setAnimalLookupError("");
+    requestApi("/api/adivinha/animais")
+      .then((animals) => {
+        if (active) setLearningAnimals(animals);
+      })
+      .catch((requestError) => {
+        if (active) setAnimalLookupError(requestError.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [step]);
 
   async function submitAnswer(answer) {
     if (!currentQuestion || isSubmitting) return;
@@ -314,13 +343,44 @@ export default function GamePage({ onBackHome }) {
 
           <form className="learning-form" onSubmit={handleLearningSubmit}>
             <label htmlFor="animal-name">Nome do animal</label>
-            <input
-              id="animal-name"
-              value={animalName}
-              onChange={(event) => setAnimalName(event.target.value)}
-              placeholder="Ex.: Hipopótamo"
-              required
-            />
+            <div className="learning-animal-search-wrap">
+              <div className="animal-search-input">
+                <Search size={18} aria-hidden="true" />
+                <input
+                  id="animal-name"
+                  value={animalName}
+                  onChange={(event) => {
+                    setAnimalName(event.target.value);
+                    setSelectedLearningAnimalId("");
+                  }}
+                  placeholder="Pesquise ou informe um animal..."
+                  autoComplete="off"
+                  required
+                />
+              </div>
+              {animalName.trim() && !selectedLearningAnimalId && (
+                <div className="animal-search-results" role="listbox" aria-label="Animais cadastrados">
+                  {matchingLearningAnimals.map((animal) => (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={selectedLearningAnimalId === String(animal.id)}
+                      key={animal.id}
+                      onClick={() => {
+                        setAnimalName(animal.nome);
+                        setSelectedLearningAnimalId(String(animal.id));
+                      }}
+                    >
+                      {animal.nome}
+                    </button>
+                  ))}
+                  {!matchingLearningAnimals.length && (
+                    <p>Nenhum animal encontrado. Você pode cadastrá-lo como novo.</p>
+                  )}
+                </div>
+              )}
+            </div>
+            {animalLookupError && <p className="api-error" role="status">{animalLookupError} Ainda é possível salvar; a API verificará duplicatas.</p>}
 
             <label htmlFor="differentiating-question">Uma característica que o diferencia</label>
             <input
