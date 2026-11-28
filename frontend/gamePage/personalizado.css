@@ -1,0 +1,61 @@
+.personalizado-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #4e6755;
+  font-size: 0.92rem;
+}
+
+.personalizado-toolbar > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.personalizado-toolbar > div {
+  display: flex;
+  gap: 8px;
+}
+
+.personalizado-toolbar .ghost-button {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.88rem;
+}
+
+.personalizado-list {
+  display: grid;
+  gap: 8px;
+  max-height: 340px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.personalizado-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(63, 110, 76, 0.14);
+  border-radius: 12px;
+  background: #f7faf5;
+  color: #354d3d;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.personalizado-item.checked {
+  border-color: rgba(47, 125, 77, 0.4);
+  background: #e6f2df;
+}
+
+.personalizado-item input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: #2f7d4d;
+}

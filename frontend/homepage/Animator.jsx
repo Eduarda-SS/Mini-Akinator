@@ -1,6 +1,6 @@
 import "./homepage.css";
 
-function Animator({ onLogin, onPlay, onPlayAdivinha }) {
+function Animator({ onLogin, onPlay, onPlayAdivinha, onPlayPersonalizado }) {
   return (
     <div className="animator-page">
       <header className="navbar">
@@ -35,6 +35,10 @@ function Animator({ onLogin, onPlay, onPlayAdivinha }) {
             </button>
             <button className="play-button adivinha-button" onClick={onPlayAdivinha}>
               Jogar Modo Adivinha
+              <span>→</span>
+            </button>
+            <button className="play-button personalizado-button" onClick={onPlayPersonalizado}>
+              Jogar Modo Personalizado
               <span>→</span>
             </button>
           </div>
@@ -76,7 +80,6 @@ function Animator({ onLogin, onPlay, onPlayAdivinha }) {
         </div>
       </section>
     </div>
-
   );
 }
 

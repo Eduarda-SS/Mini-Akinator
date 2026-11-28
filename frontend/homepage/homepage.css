@@ -295,3 +295,12 @@ body {
     flex-direction: column;
   }
 }
+
+.personalizado-button {
+  background: #3a6ea5;
+  box-shadow: 0 8px 20px rgba(58, 110, 165, 0.18);
+}
+
+.personalizado-button:hover {
+  background: #2d5a8a;
+}
