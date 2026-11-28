@@ -33,6 +33,7 @@ app.add_middleware(
 
 MAX_TENTATIVAS = 3
 PERGUNTAS_POR_RODADA = 5
+MIN_PERGUNTAS_PERSONALIZADO = 3
 
 # ----------------------------------------------------------------------------
 # Entidades de domínio
@@ -340,11 +341,15 @@ class Jogo:
         self.perguntas_ordenadas: List[Caracteristica] = []
         self.palpites_rejeitados_ids = set()
 
-    def iniciar(self) -> Caracteristica:
+    def iniciar(self, caracteristica_ids: Optional[List[int]] = None) -> Caracteristica:
         """Carrega todos os animais como candidatos e retorna a 1ª pergunta."""
         self.candidatos = self.repository.listar_animais()
         self.candidatos_anteriores = self.candidatos.copy()
-        self.perguntas_ordenadas = self.repository.listar_caracteristicas()
+        perguntas = self.repository.listar_caracteristicas()
+        if caracteristica_ids is not None:
+            permitidas = set(caracteristica_ids)
+            perguntas = [c for c in perguntas if c.id in permitidas]
+        self.perguntas_ordenadas = perguntas
         random.shuffle(self.perguntas_ordenadas)
         primeira = self.proxima_pergunta()
         if primeira is None:
@@ -523,6 +528,8 @@ def normalizar_texto(texto: str) -> str:
     sem_acentos = "".join(caractere for caractere in decomposed if not unicodedata.combining(caractere))
     return " ".join(sem_acentos.split())
 
+class StartRequest(BaseModel):
+    characteristicIds: Optional[List[int]] = None
 
 class AnswerRequest(BaseModel):
     gameId: str
@@ -692,11 +699,22 @@ def adivinha_give_up(payload: AdivinhaGameRequest):
     return {"animal": jogo["animal"].nome, "used": jogo["reveladas"]}
 
 @app.post("/api/start", response_model=StartResponse)
-def start_game():
-    """Inicia uma nova partida usando o AnimalRepository já carregado."""
+def start_game(payload: Optional[StartRequest] = None):
+    """Inicia uma partida. Com characteristicIds, usa só essas perguntas (modo Personalizado)."""
+    ids = payload.characteristicIds if payload else None
+
+    if ids is not None:
+        validos = {c.id for c in repository.listar_caracteristicas()}
+        ids = [i for i in dict.fromkeys(ids) if i in validos]  # remove duplicados e inválidos
+        if len(ids) < MIN_PERGUNTAS_PERSONALIZADO:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Selecione pelo menos {MIN_PERGUNTAS_PERSONALIZADO} perguntas.",
+            )
+
     game_id = str(uuid.uuid4())
     jogo = Jogo(game_id=game_id, repository=repository)
-    primeira = jogo.iniciar()
+    primeira = jogo.iniciar(ids)
     jogos[game_id] = jogo
 
     return StartResponse(gameId=game_id, question=primeira.to_question_dict())

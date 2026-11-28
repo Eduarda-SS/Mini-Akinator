@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import AdminLogin from "/adminLogin.jsx";
 import GamePage from "./gamePage/gamePage.jsx";
 import Adivinha from "./gamePage/Adivinha.jsx";
+import Personalizado from "./gamePage/Personalizado.jsx";
 import "./style.css";
 import Animator from "./homepage/Animator";
 
@@ -46,11 +47,16 @@ function App() {
     return <Adivinha onBackHome={() => setPage("home")} />;
   }
 
+  if (page === "personalizado") {
+    return <Personalizado onBackHome={() => setPage("home")} />;
+  }
+
   return (
     <Animator
       onLogin={() => setPage("login")}
       onPlay={() => setPage("game")}
       onPlayAdivinha={() => setPage("adivinha")}
+      onPlayPersonalizado={() => setPage("personalizado")}
     />
   );
 }

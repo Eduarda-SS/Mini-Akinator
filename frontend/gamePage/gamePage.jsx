@@ -41,7 +41,7 @@ async function requestApi(path, options = {}) {
   return data;
 }
 
-export default function GamePage({ onBackHome }) {
+export default function GamePage({ onBackHome, characteristicIds = null }) {
   const [step, setStep] = useState("loading");
   const [gameId, setGameId] = useState("");
   const [questionHistory, setQuestionHistory] = useState([]);
@@ -110,7 +110,7 @@ export default function GamePage({ onBackHome }) {
     setIsSubmitting(true);
 
     try {
-      const data = await requestApi("/api/start", { method: "POST" });
+      const data = await requestApi("/api/start", { method: "POST", body: JSON.stringify(characteristicIds ? { characteristicIds } : {}) });
       setGameId(data.gameId);
       setQuestionHistory([data.question]);
       setQuestionPosition(0);
